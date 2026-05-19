@@ -1,0 +1,6 @@
+apiVersion: v2
+name: nezdemos-api
+description: Agent-friendly API for personal data surfaces
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
