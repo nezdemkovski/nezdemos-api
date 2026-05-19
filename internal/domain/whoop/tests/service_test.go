@@ -53,6 +53,52 @@ func TestSummarizeUsesLatestNonEmptyDay(t *testing.T) {
 	}
 }
 
+func TestContextRoundsFloatMetrics(t *testing.T) {
+	strain := 6.6559
+	hrv := 38.944
+	sleepPerformance := 82.857142857
+	sleepEfficiency := 94.731
+	sleepHours := 6.594658333333333
+	workoutStrain := 10.5299
+	service := whoop.NewService(fakeRepository{days: []whoop.DailyMetrics{
+		{
+			Date:                       "2026-05-19",
+			Strain:                     &strain,
+			HRVRMSSDMilli:              &hrv,
+			SleepPerformancePercentage: &sleepPerformance,
+			SleepEfficiencyPercentage:  &sleepEfficiency,
+			SleepDurationHours:         &sleepHours,
+			WorkoutCount:               2,
+			WorkoutStrain:              &workoutStrain,
+		},
+	}})
+
+	contextPack, err := service.Context(context.Background(), 14)
+	if err != nil {
+		t.Fatal(err)
+	}
+	day := contextPack.RecentDays[0]
+	assertFloat(t, "strain", day.Strain, 6.66)
+	assertFloat(t, "hrv", day.HRVRMSSDMilli, 38.94)
+	assertFloat(t, "sleep performance", day.SleepPerformancePercentage, 82.86)
+	assertFloat(t, "sleep efficiency", day.SleepEfficiencyPercentage, 94.73)
+	assertFloat(t, "sleep hours", day.SleepDurationHours, 6.59)
+	assertFloat(t, "workout strain", day.WorkoutStrain, 10.53)
+	assertFloat(t, "strain average", contextPack.Trends.StrainAverage, 6.66)
+	assertFloat(t, "sleep performance average", contextPack.Trends.SleepPerformanceAverage, 82.86)
+	assertFloat(t, "sleep hours average", contextPack.Trends.SleepDurationAverageHours, 6.59)
+}
+
+func assertFloat(t *testing.T, name string, actual *float64, expected float64) {
+	t.Helper()
+	if actual == nil {
+		t.Fatalf("expected %s %.2f, got nil", name, expected)
+	}
+	if *actual != expected {
+		t.Fatalf("expected %s %.2f, got %.12f", name, expected, *actual)
+	}
+}
+
 type fakeRepository struct {
 	days []whoop.DailyMetrics
 }

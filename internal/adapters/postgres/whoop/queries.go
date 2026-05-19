@@ -1,7 +1,7 @@
 package whoop
 
 const profileSQL = `
-SELECT user_id, COALESCE(email, ''), COALESCE(first_name, ''), COALESCE(last_name, '')
+SELECT COALESCE(raw->>'user_id', user_id), COALESCE(email, ''), COALESCE(first_name, ''), COALESCE(last_name, '')
 FROM whoop.whoop_user_profile
 ORDER BY updated_at DESC
 LIMIT 1

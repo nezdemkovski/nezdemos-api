@@ -26,7 +26,7 @@ type DailyMetrics struct {
 	SleepEfficiencyPercentage  *float64 `json:"sleep_efficiency_percentage,omitempty" doc:"Sleep efficiency percentage, 0-100." example:"91.2"`
 	SleepDurationHours         *float64 `json:"sleep_duration_hours,omitempty" doc:"Approximate sleep duration in hours, based on in-bed time." example:"7.6"`
 	WorkoutCount               int      `json:"workout_count" doc:"Number of workouts started on this date." example:"1"`
-	WorkoutStrain              *float64 `json:"workout_strain,omitempty" doc:"Sum of workout strain values for this date." example:"8.2"`
+	WorkoutStrain              *float64 `json:"workout_strain,omitempty" doc:"Sum of workout strain values for this date. WHOOP strain is non-linear, so this is best used as a workout-load hint, not compared directly with day strain." example:"8.2"`
 }
 
 type TrendSummary struct {

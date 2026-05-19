@@ -3,6 +3,7 @@ package whoop
 import (
 	"context"
 	"fmt"
+	"math"
 	"time"
 )
 
@@ -34,6 +35,7 @@ func (s *Service) Days(ctx context.Context, fromValue, toValue string) (DateRang
 	if err != nil {
 		return DateRange{}, nil, err
 	}
+	normalizeDays(days)
 	return formatRange(from, to), days, nil
 }
 
@@ -43,6 +45,7 @@ func (s *Service) Latest(ctx context.Context) (*DailyMetrics, error) {
 	if err != nil {
 		return nil, err
 	}
+	normalizeDays(days)
 	return firstNonEmpty(days), nil
 }
 
@@ -55,6 +58,7 @@ func (s *Service) Context(ctx context.Context, days int) (ContextPack, error) {
 	if err != nil {
 		return ContextPack{}, err
 	}
+	normalizeDays(recentDays)
 	profile, err := s.repo.Profile(ctx)
 	if err != nil {
 		return ContextPack{}, err
@@ -154,6 +158,10 @@ func summarize(days []DailyMetrics) TrendSummary {
 	summary.StrainAverage = average(strainValues)
 	summary.SleepPerformanceAverage = average(sleepPerfValues)
 	summary.SleepDurationAverageHours = average(sleepHoursValues)
+	roundFloatPtr(summary.RecoveryAverage, 2)
+	roundFloatPtr(summary.StrainAverage, 2)
+	roundFloatPtr(summary.SleepPerformanceAverage, 2)
+	roundFloatPtr(summary.SleepDurationAverageHours, 2)
 	return summary
 }
 
@@ -169,10 +177,30 @@ func average(values []float64) *float64 {
 	return &result
 }
 
+func normalizeDays(days []DailyMetrics) {
+	for i := range days {
+		roundFloatPtr(days[i].Strain, 2)
+		roundFloatPtr(days[i].HRVRMSSDMilli, 2)
+		roundFloatPtr(days[i].SleepPerformancePercentage, 2)
+		roundFloatPtr(days[i].SleepEfficiencyPercentage, 2)
+		roundFloatPtr(days[i].SleepDurationHours, 2)
+		roundFloatPtr(days[i].WorkoutStrain, 2)
+	}
+}
+
+func roundFloatPtr(value *float64, places int) {
+	if value == nil {
+		return
+	}
+	factor := math.Pow10(places)
+	*value = math.Round(*value*factor) / factor
+}
+
 func interpretationHints() map[string]string {
 	return map[string]string{
 		"recovery_score":               "0-100, higher usually means more readiness for strain.",
 		"strain":                       "0-21 WHOOP cardiovascular load scale; higher means more strain.",
+		"workout_strain":               "Sum of workout strain values for the day. Because WHOOP strain is non-linear, treat it as a workout-load hint, not a value directly comparable to day strain.",
 		"sleep_performance_percentage": "0-100, actual sleep compared with WHOOP sleep need.",
 		"hrv_rmssd_milli":              "Heart-rate variability in milliseconds, best interpreted as personal trend.",
 		"data_freshness":               "Most recent updated_at timestamp across synced WHOOP tables.",
