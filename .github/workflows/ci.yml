@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Go test
+        run: go test ./...
+
+      - name: Go build
+        run: go build ./...
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Helm lint
+        run: helm lint charts/nezdemos-api
+
+      - name: Helm template
+        run: |
+          helm template nezdemos-api charts/nezdemos-api --namespace nezdemos-api >/tmp/nezdemos-api-default.yaml
+          helm template nezdemos-api charts/nezdemos-api \
+            --namespace nezdemos-api \
+            --set env.POSTGRES_HOST=whoop-postgres-rw \
+            --set 'envFrom[0].secretRef.name=nezdemos-api-env' \
+            --set secret.enabled=true \
+            --set secret.stringData.NEZDEMOS_API_KEY=ci-smoke \
+            >/tmp/nezdemos-api-secret.yaml
