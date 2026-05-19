@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	pgwhoop "nezdemos-api/internal/adapters/postgres/whoop"
+	"nezdemos-api/internal/buildinfo"
 	"nezdemos-api/internal/config"
 	domainwhoop "nezdemos-api/internal/domain/whoop"
 	"nezdemos-api/internal/httpapi"
@@ -19,10 +20,10 @@ func NewHandler(cfg config.Settings, db *pgxpool.Pool) http.Handler {
 	router := chi.NewRouter()
 	router.Use(httpapi.APIKeyMiddleware(cfg.APIKey))
 
-	api := humachi.New(router, huma.DefaultConfig("Nezdemos API", "0.1.0"))
+	api := humachi.New(router, huma.DefaultConfig("Nezdemos API", buildinfo.Version))
 	configureOpenAPI(api)
 
-	httpapi.RegisterHealth(api)
+	httpapi.RegisterHealth(api, buildinfo.Version)
 	whoopRepo := pgwhoop.NewRepository(db)
 	whoopService := domainwhoop.NewService(whoopRepo)
 	httpwhoop.Register(api, whoopService)

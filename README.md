@@ -96,7 +96,7 @@ spec:
 
 ## Endpoints
 
-- `GET /healthz`
+- `GET /healthz` returns status and build version
 - `GET /openapi.json`
 - `GET /whoop/profile`
 - `GET /whoop/latest`

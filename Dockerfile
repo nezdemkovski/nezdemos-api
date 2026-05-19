@@ -5,9 +5,10 @@ COPY go.mod go.sum* ./
 RUN --mount=type=cache,target=/go/pkg/mod go mod download
 
 COPY . .
+ARG VERSION=dev
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
-    CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/nezdemos-api ./cmd/nezdemos-api
+    CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -X nezdemos-api/internal/buildinfo.Version=${VERSION}" -o /out/nezdemos-api ./cmd/nezdemos-api
 
 FROM alpine:3.22
 

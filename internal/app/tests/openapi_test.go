@@ -36,9 +36,31 @@ func TestOpenAPISpecIsAgentFriendly(t *testing.T) {
 		`"security":[]`,
 		`"X-API-Key"`,
 		`"WHOOP recovery score, 0-100 scale."`,
+		`"Application version embedded at build time."`,
 	} {
 		if !strings.Contains(spec, expected) {
 			t.Fatalf("expected OpenAPI spec to contain %s", expected)
+		}
+	}
+}
+
+func TestHealthIncludesVersion(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
+	rec := httptest.NewRecorder()
+	app.NewHandler(config.Settings{APIKey: "secret"}, nil).ServeHTTP(rec, req)
+
+	resp := rec.Result()
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("expected 200, got %d", resp.StatusCode)
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, expected := range []string{`"status":"ok"`, `"version":"dev"`} {
+		if !strings.Contains(string(body), expected) {
+			t.Fatalf("expected health response to contain %s, got %s", expected, string(body))
 		}
 	}
 }
