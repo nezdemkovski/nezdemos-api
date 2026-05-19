@@ -2,19 +2,19 @@ package whoop
 
 const profileSQL = `
 SELECT user_id, COALESCE(email, ''), COALESCE(first_name, ''), COALESCE(last_name, '')
-FROM whoop_user_profile
+FROM whoop.whoop_user_profile
 ORDER BY updated_at DESC
 LIMIT 1
 `
 
 const dataFreshnessSQL = `
 SELECT MAX(updated_at) FROM (
-	SELECT updated_at FROM whoop_user_profile
-	UNION ALL SELECT updated_at FROM whoop_body_measurement
-	UNION ALL SELECT updated_at FROM whoop_cycle
-	UNION ALL SELECT updated_at FROM whoop_recovery
-	UNION ALL SELECT updated_at FROM whoop_sleep
-	UNION ALL SELECT updated_at FROM whoop_workout
+	SELECT updated_at FROM whoop.whoop_user_profile
+	UNION ALL SELECT updated_at FROM whoop.whoop_body_measurement
+	UNION ALL SELECT updated_at FROM whoop.whoop_cycle
+	UNION ALL SELECT updated_at FROM whoop.whoop_recovery
+	UNION ALL SELECT updated_at FROM whoop.whoop_sleep
+	UNION ALL SELECT updated_at FROM whoop.whoop_workout
 ) AS updates
 `
 
@@ -32,7 +32,7 @@ cycles AS (
 		AVG(score_strain)::float8 AS strain,
 		ROUND(AVG(score_average_heart_rate))::int AS average_heart_rate,
 		MAX(score_max_heart_rate)::int AS max_heart_rate
-	FROM whoop_cycle, bounds
+	FROM whoop.whoop_cycle, bounds
 	WHERE start_time::date BETWEEN from_date AND to_date
 	GROUP BY 1
 ),
@@ -42,8 +42,8 @@ recoveries AS (
 		ROUND(AVG(r.score_recovery_score))::int AS recovery_score,
 		ROUND(AVG(r.score_resting_heart_rate))::int AS resting_heart_rate,
 		AVG(r.score_hrv_rmssd_milli)::float8 AS hrv_rmssd_milli
-	FROM whoop_recovery r
-	JOIN whoop_cycle c ON c.id = r.cycle_id
+	FROM whoop.whoop_recovery r
+	JOIN whoop.whoop_cycle c ON c.id = r.cycle_id
 	JOIN bounds ON true
 	WHERE c.start_time::date BETWEEN from_date AND to_date
 	GROUP BY 1
@@ -54,7 +54,7 @@ sleeps AS (
 		AVG(score_sleep_performance_percentage)::float8 AS sleep_performance_percentage,
 		AVG(score_sleep_efficiency_percentage)::float8 AS sleep_efficiency_percentage,
 		AVG(score_stage_summary_total_in_bed_time_milli)::float8 / 1000 / 60 / 60 AS sleep_duration_hours
-	FROM whoop_sleep, bounds
+	FROM whoop.whoop_sleep, bounds
 	WHERE COALESCE(end_time, start_time)::date BETWEEN from_date AND to_date
 	GROUP BY 1
 ),
@@ -63,7 +63,7 @@ workouts AS (
 		start_time::date AS day,
 		COUNT(*)::int AS workout_count,
 		SUM(score_strain)::float8 AS workout_strain
-	FROM whoop_workout, bounds
+	FROM whoop.whoop_workout, bounds
 	WHERE start_time::date BETWEEN from_date AND to_date
 	GROUP BY 1
 )
